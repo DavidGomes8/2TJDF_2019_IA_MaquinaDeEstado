@@ -9,7 +9,8 @@ public class SMia : MonoBehaviour
     public enum Estados
     {
         ESPERAR,
-        PATRULHAR
+        PATRULHAR,
+        PERSEGUIR
     }
 
     public Estados estadoAtual;
@@ -18,18 +19,22 @@ public class SMia : MonoBehaviour
 
     private NavMeshAgent navMeshAgent;
 
+    private Transform player;
+
     [Header("Esperar")]
     public float tempoEsperar = 2f;
-
     public float tempoEsperando = 0f;
 
     [Header("Patrulhar")]
     public Transform waypint1;
-
     public Transform waypint2;
     private Transform waypintAtual;
     public float distanciaMinimaWaypoint = 1f;
     private float distanciaWaypointAtual;
+
+    [Header("Perseguir")]
+    private float campoVisao = 5f;
+    private float distanciaJogador;
 
     private void Awake()
     {
@@ -38,6 +43,8 @@ public class SMia : MonoBehaviour
 
     private void Start()
     {
+        player = GameObject.FindGameObjectWithTag("Player").transform;
+
         waypintAtual = waypint1;
 
         Esperar();
@@ -50,6 +57,12 @@ public class SMia : MonoBehaviour
 
     private void ChecarEstados()
     {
+        if (estadoAtual != Estados.PERSEGUIR && PossuiVisaoJogador())
+        {
+            Perseguir();
+            return;
+        }
+
         switch (estadoAtual)
         {
             case Estados.ESPERAR:
@@ -75,6 +88,18 @@ public class SMia : MonoBehaviour
                     alvo = waypintAtual;
                 }
 
+                break;
+
+            case Estados.PERSEGUIR:
+
+                if (!PossuiVisaoJogador())
+                {
+                    Esperar();
+                }
+                else
+                {
+                    alvo = player;
+                }
                 break;
         }
 
@@ -116,4 +141,19 @@ public class SMia : MonoBehaviour
     }
 
     #endregion PATRULHAR
+
+    #region PERSEGUIR
+
+    private void Perseguir()
+    {
+        estadoAtual = Estados.PERSEGUIR;
+    }
+
+    private bool PossuiVisaoJogador()
+    {
+        distanciaJogador = Vector3.Distance(transform.position, player.position);
+        return distanciaJogador <= campoVisao;
+    }
+
+    #endregion PERSEGUIR
 }
