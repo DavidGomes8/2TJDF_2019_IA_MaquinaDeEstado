@@ -21,8 +21,6 @@ public class SetDestination : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit))
             {
-                Debug.Log(hit.transform.name);
-
                 agente.destination = hit.point;
             }
         }

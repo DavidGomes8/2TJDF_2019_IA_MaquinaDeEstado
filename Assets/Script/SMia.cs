@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
+using UnityStandardAssets.Characters.ThirdPerson;
 
 public class SMia : MonoBehaviour
 {
@@ -10,7 +11,8 @@ public class SMia : MonoBehaviour
     {
         ESPERAR,
         PATRULHAR,
-        PERSEGUIR
+        PERSEGUIR,
+        PROCURAR
     }
 
     public Estados estadoAtual;
@@ -18,27 +20,37 @@ public class SMia : MonoBehaviour
     private Transform alvo;
 
     private NavMeshAgent navMeshAgent;
+    private AICharacterControl aiCharacterControl;
 
     private Transform player;
 
     [Header("Esperar")]
     public float tempoEsperar = 2f;
-    public float tempoEsperando = 0f;
+
+    private float tempoEsperando = 0f;
 
     [Header("Patrulhar")]
     public Transform waypint1;
+
     public Transform waypint2;
     private Transform waypintAtual;
     public float distanciaMinimaWaypoint = 1f;
     private float distanciaWaypointAtual;
 
     [Header("Perseguir")]
-    private float campoVisao = 5f;
+    public float campoVisao = 5f;
+
     private float distanciaJogador;
+
+    [Header("Procurar")]
+    public float tempoProcurar = 4f;
+
+    private float tempoProcurando = 0f;
 
     private void Awake()
     {
         navMeshAgent = GetComponent<NavMeshAgent>();
+        aiCharacterControl = GetComponent<AICharacterControl>();
     }
 
     private void Start()
@@ -94,16 +106,35 @@ public class SMia : MonoBehaviour
 
                 if (!PossuiVisaoJogador())
                 {
-                    Esperar();
+                    Procurar();
                 }
                 else
                 {
                     alvo = player;
                 }
                 break;
+
+            case Estados.PROCURAR:
+
+                if (ProcurouTemposuficinete())
+                {
+                    Esperar();
+                }
+                else
+                {
+                    alvo = null;
+                }
+                break;
         }
 
-        navMeshAgent.destination = alvo.position;
+        if (aiCharacterControl)
+        {
+            aiCharacterControl.SetTarget(alvo);
+        }
+        else if (alvo != null)
+        {
+            navMeshAgent.destination = alvo.position;
+        }
     }
 
     #region ESPERAR
@@ -127,6 +158,7 @@ public class SMia : MonoBehaviour
     private void Patrulhar()
     {
         estadoAtual = Estados.PATRULHAR;
+        navMeshAgent.speed = 0.5f;
     }
 
     private bool PertoWypointAtual()
@@ -147,6 +179,7 @@ public class SMia : MonoBehaviour
     private void Perseguir()
     {
         estadoAtual = Estados.PERSEGUIR;
+        navMeshAgent.speed = 1f;
     }
 
     private bool PossuiVisaoJogador()
@@ -156,4 +189,20 @@ public class SMia : MonoBehaviour
     }
 
     #endregion PERSEGUIR
+
+    #region PROCURAR
+
+    private void Procurar()
+    {
+        estadoAtual = Estados.PROCURAR;
+
+        tempoProcurando = Time.time;
+    }
+
+    private bool ProcurouTemposuficinete()
+    {
+        return tempoProcurando + tempoProcurar <= Time.time;
+    }
+
+    #endregion PROCURAR
 }
